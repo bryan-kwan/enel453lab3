@@ -1,0 +1,14 @@
+
+module register_16 (input logic [15:0] data,
+						  input logic write_enable_n, clk, reset_n,
+						  output logic [15:0] q);
+						  
+						  
+		always_ff @(posedge clk, negedge reset_n)
+			if(~reset_n) //asynchronous active low reset
+				q<=16'b0000_0000_0000_0000;
+			else if (~write_enable_n)
+				q<=data;
+						  
+						  
+endmodule

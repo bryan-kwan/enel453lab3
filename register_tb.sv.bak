@@ -1,0 +1,39 @@
+
+
+`timescale 1ns/1ps
+
+module register_16_tb();
+	logic clk=0;
+	logic [15:0] data, q;
+	logic write_enable_n, reset_n;
+	parameter CLOCK_PERIOD = 20;
+	parameter delay = 2 * CLOCK_PERIOD;
+	// Instantiate UUTs
+	register_16 UUT(.data(data),.clk(clk),
+	.write_enable_n(write_enable_n),.reset_n(reset_n),.q(q));
+	
+	// Apply stimulus
+	always #(CLOCK_PERIOD/2) clk = ~clk; // run clock forever with period 20 ns 
+	initial begin 
+		$display("---  Testbench started  ---");
+		#(100*delay);
+		//Reset test
+		reset_n = 1; #(delay);
+		reset_n = 0; #(delay);
+		assert(q===16'b0000_0000_0000_0000) else $error("reset_n=0 failed");
+		reset_n = 1; #(delay);
+		
+		//Writing data test
+		write_enable_n=1;
+		data = 16'b1010_0101_1010_0101; //A5A5 in hexadecimal
+		q = 16'b0000_0000_0000_0000; #(delay);
+		assert(q!==data) else $error("write_enable_n=0 failed");
+		
+		write_enable_n=0; #(delay);
+		assert(q===data) else $error("write_enable_n=1 failed");
+		
+		
+		$display("\n===  Testbench ended  ===");
+		$stop; // this stops simulation, needed because clk runs forever
+	end
+ endmodule

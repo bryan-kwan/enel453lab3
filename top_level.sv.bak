@@ -1,0 +1,70 @@
+// top level module
+// Watch out for case sensitivity when translating from VHDL.
+// Also note that the .QSF is case sensitive.
+
+module top_level
+ (input  logic       clk,
+  input  logic       reset_n,
+  input  logic [9:0] SW,
+  input  logic store,
+  output logic [9:0] LEDR,
+  output logic [7:0] HEX0,HEX1,HEX2,HEX3,HEX4,HEX5);
+  
+  logic [3:0]  Num_Hex0, Num_Hex1, Num_Hex2, Num_Hex3, Num_Hex4, Num_Hex5;   
+  logic [5:0]  DP_in, Blank;
+  logic [12:0] switch_inputs;
+  logic [15:0] bcd;  
+  logic [15:0] mux_out;
+  logic [15:0] in2,in3,in4;
+  logic [9:0] SW_out;
+  logic [1:0] s; // MUX select line, s=SW[9:8]
+  logic write_enable_n; // Storage register write enable active low
+  
+  assign Num_Hex0 = mux_out[3:0]; 
+  assign Num_Hex1 = mux_out[7:4];
+  assign Num_Hex2 = mux_out[11:8];
+  assign Num_Hex3 = mux_out[15:12];
+  assign Num_Hex4 = 4'b0000;
+  assign Num_Hex5 = 4'b0000;   
+  assign DP_in    = 6'b000000; // position of the decimal point in the display (1=LED on,0=LED off)
+  assign Blank    = 6'b110000; // blank the 2 MSB 7-segment displays (1=7-seg display off, 0=7-seg display on)  
+                                                 
+  assign LEDR[9:0]         = SW_out[9:0]; // gives visual display of the switch inputs to the LEDs on board
+  assign switch_inputs     = {5'b00000,SW_out[7:0]};
+  assign in2 					= {8'b00000000,SW_out[7:0]};
+  assign s 						= SW_out[9:8];
+	
+  assign in4 = 16'b0101_1010_0101_1010;
+  
+  // instantiate lower level modules
+  
+  debounce debouncer_ins(.clk(clk),.reset_n(reset_n),.button(store),.result(write_enable_n));
+  
+  register_16 register_16_ins(.clk(clk),.reset_n(reset_n),.write_enable_n(write_enable_n),.data(mux_out),.q(in3));
+  
+  synchronizer synchronizer_ins(.clk(clk), .SW(SW),.SW_out(SW_out));
+
+  MUX4TO1 MUX4TO1_ins(.in1(bcd), .in2(in2),.in3(in3),.in4(in4), .s(s),.mux_out(mux_out));
+  
+  //SevenSegment SevenSegment_ins(.*); // (.*) doesn't work for VHDL files, and instance name was too long
+  SevenSegment SevenSeg_ins(.Num_Hex0(Num_Hex0),
+                            .Num_Hex1(Num_Hex1),
+                            .Num_Hex2(Num_Hex2),
+                            .Num_Hex3(Num_Hex3),
+                            .Num_Hex4(Num_Hex4),
+                            .Num_Hex5(Num_Hex5),
+                            .Hex0(HEX0),
+                            .Hex1(HEX1),
+                            .Hex2(HEX2),
+                            .Hex3(HEX3),
+                            .Hex4(HEX4),
+                            .Hex5(HEX5),
+                            .DP_in(DP_in),
+									          .Blank(Blank));
+  
+  binary_bcd binary_bcd_ins(.clk(clk),                          
+                            .reset_n(reset_n),                                 
+                            .binary(switch_inputs),    
+                            .bcd(bcd));
+
+endmodule
