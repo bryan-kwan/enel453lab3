@@ -8,6 +8,7 @@ module top_level_tb();
 	int digit0, digit1, digit2, digit3;
 	logic write_enable;
 	logic [12:0] voltage, distance, avg_out;
+	logic [15:0] reg_out;
 	logic [5:0] DP, Blank;
 
 	logic [7:0] switch_value;
@@ -58,6 +59,7 @@ module top_level_tb();
 	assign voltage = UUT.MUX_binary_output_ins.in2;
 	assign distance = UUT.MUX_binary_output_ins.in1;
 	assign avg_out = UUT.MUX_hexadecimal_output_ins.in2;
+	assign reg_out = UUT.reg_out;
 	assign DP=UUT.DP_in;
 	assign Blank=UUT.Blank;
 	
