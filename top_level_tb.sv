@@ -123,6 +123,9 @@ module top_level_tb();
 		$display("Start of average mode test (time=%t ps)", $time);
 		SW[9:8]=2'b01; #(delay); // Set to average mode
 		assert(DP===6'b00_0000) else $error("Average mode: Expected DP=6'b00_0000 (received %b)",DP);
+		force UUT.ADC_Data_ins.ADC_out = 100; #(delay);
+		assert(reg_out==UUT.ADC_Data_ins.ADC_out) else $error("Average mode: Expected reg_out=%b (received %b)",UUT.ADC_Data_ins.ADC_out,reg_out);
+		release UUT.ADC_Data_ins.ADC_out;
 		assert(reg_out==UUT.ADC_out) else $error("Average mode: Expected reg_out=%b (received %b)",UUT.ADC_out,reg_out);
 		$display("End of average mode test");
 
@@ -145,10 +148,10 @@ module top_level_tb();
 		// Override the internal signal for average to check correct voltage conversion
 		for(int i=0; i<4096; i++) begin
 			counter=i;
-			force UUT.ADC_Data_ins.ADC_out_ave=counter; #(delay); 
+			force UUT.ADC_Data_ins.ADC_out=counter; #(delay); 
 			// Formula: voltage_temp = ADC_out_ave*2500*2/(2**12);
 			assert(voltage==i*2500*2/(2**12)) else $error("Voltage mode: Expected voltage=%d (received %d)",i*2500*2/(2**12),voltage);
-			release UUT.ADC_Data_ins.ADC_out_ave;
+			release UUT.ADC_Data_ins.ADC_out;
 		end
 		$display("End of voltage mode test");
 
@@ -165,7 +168,7 @@ module top_level_tb();
 		SW[7:0]='0; #(delay);
 		assert(reg_out===switch_value) else $error("Freeze button failed: Expected reg_out=%b (received %b)",switch_value,reg_out);
 		$display("End of freeze button test (time=%t ps)", $time);
-		
+
 		$display("\n===  Testbench ended  ===");
 		$stop; // this stops simulation, needed because clk runs forever
 	end
