@@ -125,8 +125,8 @@ module top_level_tb();
 		assert(DP===6'b00_0000) else $error("Average mode: Expected DP=6'b00_0000 (received %b)",DP);
 		force UUT.ADC_Data_ins.ADC_out = 100; #(delay);
 		assert(reg_out==UUT.ADC_Data_ins.ADC_out) else $error("Average mode: Expected reg_out=%b (received %b)",UUT.ADC_Data_ins.ADC_out,reg_out);
+		assert(Blank===6'b11_1100) else $error("Average mode: Expected Blank=%b (recieved %b)",6'b11_1100,Blank);
 		release UUT.ADC_Data_ins.ADC_out;
-		assert(reg_out==UUT.ADC_out) else $error("Average mode: Expected reg_out=%b (received %b)",UUT.ADC_out,reg_out);
 		$display("End of average mode test");
 
 		// Distance mode tests
@@ -137,6 +137,7 @@ module top_level_tb();
 		// Check value pair from v2d_rom.txt: voltage=100, distance=26A
 		force UUT.ADC_Data_ins.voltage_temp = 100; #(delay);
 		assert(distance=='h26A) else $error("Distance mode: Expected distance=%h (recieved %h)",'h26A,distance);
+		assert(Blank===6'b11_1000) else $error("Distance mode: Expected Blank=%b (recieved %b)",6'b11_1000,Blank);
 		release UUT.ADC_Data_ins.voltage_temp;
 		$display("End of distance mode test");
 		
