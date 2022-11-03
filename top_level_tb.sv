@@ -15,7 +15,14 @@ module top_level_tb();
 
 	parameter CLOCK_PERIOD = 20;
 	parameter delay = 6*CLOCK_PERIOD;
+	parameter bcd_delay = 250*CLOCK_PERIOD;
 	parameter debouncer_stable_time = 5000000*CLOCK_PERIOD;
+
+	parameter N_SAMPLES = 256;
+	parameter SAMPLE_WIDTH = 16;
+
+	static int use_force_button_tests = 1; // 1 = use force to change write_enable, 0 = use button
+	static int counter; // used as an intermediate variable for force statement
 	// Instantiate UUTs
 	//(input  logic       clk,
 	//  input  logic       reset_n,
@@ -68,6 +75,11 @@ module top_level_tb();
 		
 		#(0.25*CLOCK_PERIOD); // Offset the stimulus by 0.25 Period
 
+		if(!use_force_button_tests) begin
+			button=0; #(delay);
+			button=1; #(debouncer_stable_time); // Enable on
+		end else force UUT.write_enable=1;
+
 		// Reset tests
 		SW[9:8]=2'b00; // Set to decimal mode
 		reset_n = 1; #(delay);
@@ -90,14 +102,13 @@ module top_level_tb();
 		reset_n = 1; #(delay);
 		
 		// Display value tests
-		button=0; #(delay);
-		button=1; #(debouncer_stable_time); // Enable on
 
 		SW[9:8]=2'b00; #(delay) // Set to hexadecimal mode
+		$display("Start of hexadecimal mode test (time=%t ps)", $time);
 		assert(DP===6'b00_0000) else $error("Hexadecimal mode: Expected DP=6'b00_0000 (received %b)",DP);
 		assert(Blank===6'b11_0000) else $error("Hexadecimal mode: Expected Blank=6'b11_0000 (received %b)",Blank);
 		for (int i = 0; i < 256; i++) begin
-			SW[7:0]=i; #5000;
+			SW[7:0]=i; #(bcd_delay);
 			digit0 = i / 16 ** (1 - 1) % 16; // First digit of i in base 16
 			digit1= i / 16 **(2 - 1) % 16; // Second digit
 			digit2= i / 16 ** (3 - 1) % 16; // Third digit
@@ -109,29 +120,52 @@ module top_level_tb();
 		$display("End of hexadecimal mode test");
 
 		// Average mode tests
+		$display("Start of average mode test (time=%t ps)", $time);
 		SW[9:8]=2'b01; #(delay); // Set to average mode
 		assert(DP===6'b00_0000) else $error("Average mode: Expected DP=6'b00_0000 (received %b)",DP);
+		assert(reg_out==UUT.ADC_out) else $error("Average mode: Expected reg_out=%b (received %b)",UUT.ADC_out,reg_out);
 		$display("End of average mode test");
 
 		// Distance mode tests
-		SW[9:8]=2'b10; #(delay); // Set to distance mode
-		assert(DP===6'b00_0100) else $error("Distance mode: Expected DP=6'b00_0100 (received %b)",DP);	
+		$display("Start of distance mode test (time=%t ps)", $time);
+		SW[9:8]=2'b10; #(bcd_delay); // Set to distance mode
+		assert(DP===6'b00_0100) else $error("Distance mode: Expected DP=6'b00_0100 (received %b)",DP);
+		assert(reg_out==UUT.distance) else $error("Distance mode: Expected reg_out=%b (received %b)",distance,reg_out);	
+		// Check value pair from v2d_rom.txt: voltage=100, distance=26A
+		force UUT.ADC_Data_ins.voltage_temp = 100; #(delay);
+		assert(distance=='h26A) else $error("Distance mode: Expected distance=%h (recieved %h)",'h26A,distance);
+		release UUT.ADC_Data_ins.voltage_temp;
 		$display("End of distance mode test");
 		
 		// Voltage mode tests
-		SW[9:8]=2'b11; #(delay); // Set to voltage mode
+		$display("Start of voltage mode test (time=%t ps)", $time);
+		SW[9:8]=2'b11; #(bcd_delay); // Set to voltage mode
 		assert(DP===6'b00_1000) else $error("Voltage mode: Expected DP=6'b00_1000 (received %b)",DP);
 		assert(Blank===6'b11_0000) else $error("Voltage mode: Expected Blank=6'b11_0000 (received %b)",Blank);
+		// Override the internal signal for average to check correct voltage conversion
+		for(int i=0; i<4096; i++) begin
+			counter=i;
+			force UUT.ADC_Data_ins.ADC_out_ave=counter; #(delay); 
+			// Formula: voltage_temp = ADC_out_ave*2500*2/(2**12);
+			assert(voltage==i*2500*2/(2**12)) else $error("Voltage mode: Expected voltage=%d (received %d)",i*2500*2/(2**12),voltage);
+			release UUT.ADC_Data_ins.ADC_out_ave;
+		end
 		$display("End of voltage mode test");
 
 		// Freeze button tests
+		$display("Start of freeze button test (time=%t ps)", $time);
 		SW[9:8]=2'b00; #(delay);
 		SW[7:0]='1;
 		switch_value=SW[7:0];
-		button=0; #(debouncer_stable_time); // Enable off
+		if(!use_force_button_tests) begin
+			button=0; #(debouncer_stable_time); // Enable off
+		end
+		else release UUT.write_enable;
+
 		SW[7:0]='0; #(delay);
 		assert(reg_out===switch_value) else $error("Freeze button failed: Expected reg_out=%b (received %b)",switch_value,reg_out);
-
+		$display("End of freeze button test (time=%t ps)", $time);
+		
 		$display("\n===  Testbench ended  ===");
 		$stop; // this stops simulation, needed because clk runs forever
 	end
