@@ -149,10 +149,10 @@ module top_level_tb();
 		// Override the internal signal for average to check correct voltage conversion
 		for(int i=0; i<4096; i++) begin
 			counter=i;
-			force UUT.ADC_Data_ins.ADC_out=counter; #(delay); 
+			force UUT.ADC_Data_ins.ADC_out_ave=counter; #(delay); 
 			// Formula: voltage_temp = ADC_out_ave*2500*2/(2**12);
 			assert(voltage==i*2500*2/(2**12)) else $error("Voltage mode: Expected voltage=%d (received %d)",i*2500*2/(2**12),voltage);
-			release UUT.ADC_Data_ins.ADC_out;
+			release UUT.ADC_Data_ins.ADC_out_ave;
 		end
 		$display("End of voltage mode test");
 
