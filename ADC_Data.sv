@@ -19,18 +19,18 @@ module ADC_Data(
 //==========================================================================
 //== Uncomment one of the two ADC modules below, depending on the purpose ==
 //==========================================================================
-/*  // Instantiate RTL ADC (i.e. for Quartus)
+ // Instantiate RTL ADC (i.e. for Quartus)
   ADC_Conversion ADC_ins(
     .MAX10_CLK1_50      (clk),
     .response_valid_out (response_valid_out),
     .ADC_out            (ADC_raw_temp)); 
-*/
+
   
   // Instantiate Simulation ADC (i.e. for ModelSim)
-  ADC_Simulation ADC_ins(
-    .MAX10_CLK1_50      (clk),
-    .response_valid_out (response_valid_out),
-    .ADC_out            (ADC_raw_temp)); 
+  // ADC_Simulation ADC_ins(
+  //   .MAX10_CLK1_50      (clk),
+  //   .response_valid_out (response_valid_out),
+  //   .ADC_out            (ADC_raw_temp)); 
 
 //==========================================================================
   
@@ -38,19 +38,26 @@ module ADC_Data(
     .clk(clk),
     .voltage  (voltage_temp),
     .distance (distance));
+
+  // Provided averager module   
+  // averager256 #( // change parameters here to modify the number of samples to average
+  //   .N(8),     // 8, 10, -- log2(number of samples to average over), e.g. N=8 is 2**8 = 256 samples
+  //   .X(4),     // 4, 5, -- X = log4(2**N), e.g. log4(2**8) = log4(4**4) = log4(256) = 4 (bit of resolution gained)
+  //   .bits(11)) // 11 -- number of bits in the input data to be averaged
     
-  averager256 #( // change parameters here to modify the number of samples to average
-    .N(8),     // 8, 10, -- log2(number of samples to average over), e.g. N=8 is 2**8 = 256 samples
-    .X(4),     // 4, 5, -- X = log4(2**N), e.g. log4(2**8) = log4(4**4) = log4(256) = 4 (bit of resolution gained)
-    .bits(11)) // 11 -- number of bits in the input data to be averaged
-    
-  averager( // below are the connections for the instantiation
-    .clk     (clk),
-    .reset_n (reset_n),
-    .EN      (response_valid_out),
-    .Din     (ADC_raw_temp),
-    .Q       (ADC_out_ave));
-    
+  // averager_ins( // below are the connections for the instantiation
+  //   .clk     (clk),
+  //   .reset_n (reset_n),
+  //   .EN      (response_valid_out),
+  //   .Din     (ADC_raw_temp),
+  //   .Q       (ADC_out_ave));
+
+  // Averager module created for lab 3
+  averager #(.INWIDTH(16), 
+             .LOGSIZE(8), // Log base 2 of the size of SAMPLESIZE
+             .OUTWIDTH(16)) // Same as INWIDTH if accurate rounding is not required (truncation is ok))
+  averager_ins(.clk(clk),.reset_n(reset_n),.EN(response_valid_out),.Din(ADC_raw_temp,.Q(ADC_out_ave)));
+
   assign ADC_out = ADC_out_ave;
   assign ADC_raw = ADC_raw_temp;
   assign voltage = voltage_temp;

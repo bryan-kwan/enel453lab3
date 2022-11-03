@@ -378,7 +378,6 @@ set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to button
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name TEXT_FILE v2d_rom.txt
 set_global_assignment -name SYSTEMVERILOG_FILE MUX4TO1_tb.sv
 set_global_assignment -name SYSTEMVERILOG_FILE MUX4TO1.sv
@@ -408,3 +407,4 @@ set_global_assignment -name SYSTEMVERILOG_FILE digit_manager.sv
 set_global_assignment -name SYSTEMVERILOG_FILE digit_manager_tb.sv
 set_global_assignment -name SYSTEMVERILOG_FILE averager.sv
 set_global_assignment -name SYSTEMVERILOG_FILE averager_tb.sv
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
