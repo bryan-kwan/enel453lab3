@@ -56,7 +56,7 @@ module ADC_Data(
   averager #(.INWIDTH(16), 
              .LOGSIZE(8), // Log base 2 of the size of SAMPLESIZE
              .OUTWIDTH(16)) // Same as INWIDTH if accurate rounding is not required (truncation is ok))
-  averager_ins(.clk(clk),.reset_n(reset_n),.EN(response_valid_out),.Din(ADC_raw_temp,.Q(ADC_out_ave)));
+  averager_ins(.clk(clk),.reset_n(reset_n),.EN(response_valid_out),.Din(ADC_raw_temp),.Q(ADC_out_ave));
 
   assign ADC_out = ADC_out_ave;
   assign ADC_raw = ADC_raw_temp;
